@@ -81,8 +81,19 @@ $signtoolCandidates = @(
 )
 $signtool = $signtoolCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $signtool) {
-    $found = Get-ChildItem -Path (Join-Path $buildRoot "NuGetPackages\microsoft.windows.sdk.buildtools") -Filter signtool.exe -Recurse -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -like '*x64*' } | Select-Object -First 1
+    # Hardcoded-version candidates above miss whenever a different SDK
+    # BuildTools version got restored (e.g. a fresh CI runner). Fall back to
+    # a recursive search across every NuGet packages root that might exist,
+    # not just the one under $buildRoot -- on CI, $BuildCacheRoot is unset
+    # so $buildRoot is the repo root and has no NuGetPackages folder at all.
+    $searchRoots = @(
+        (Join-Path $buildRoot "NuGetPackages\microsoft.windows.sdk.buildtools"),
+        "$env:USERPROFILE\.nuget\packages\microsoft.windows.sdk.buildtools"
+    ) | Where-Object { Test-Path $_ } | Select-Object -Unique
+    $found = $searchRoots | ForEach-Object {
+        Get-ChildItem -Path $_ -Filter signtool.exe -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -like '*x64*' }
+    } | Select-Object -First 1
     if ($found) { $signtool = $found.FullName }
 }
 if (-not $signtool) { throw "signtool.exe not found." }
