@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <!--
+    NuGet.config is gitignored — this .example is the checked-in template.
+    Copy this file to NuGet.config (same folder) and edit the path below if
+    you want to redirect restored NuGet packages off C: to save space. This
+    is entirely optional: if you skip this file, `dotnet restore` just uses
+    the standard global packages folder (%USERPROFILE%\.nuget\packages) —
+    everything builds fine either way.
+  -->
+  <config>
+    <add key="globalPackagesFolder" value="D:\BuildCache\NuGetPackages" />
+  </config>
+</configuration>

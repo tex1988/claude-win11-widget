@@ -1,6 +1,9 @@
 # Machine-specific signing config (cert thumbprint) — see local.settings.ps1.example
 local.settings.ps1
 
+# Machine-specific NuGet global packages folder redirect — see NuGet.config.example
+NuGet.config
+
 # .NET / MSBuild build output (also redirected to D:\BuildCache by Directory.Build.props,
 # but ignore locally too in case that redirect isn't in effect)
 bin/

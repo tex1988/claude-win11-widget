@@ -1,13 +1,20 @@
 <Project>
   <!--
-    Redirect build output (bin/obj/AppPackages) to D: to save space on C:.
+    Optionally redirect build output (bin/obj/AppPackages) off C: to save
+    space, driven by the ClaudeWidgetBuildCacheRoot environment variable
+    (set by build.ps1/deploy.ps1/package-release.ps1 from $BuildCacheRoot in
+    the gitignored local.settings.ps1 — see local.settings.ps1.example). When
+    unset, this is a no-op and MSBuild's normal defaults apply (output under
+    ClaudeWidget\bin\obj\, already gitignored) — so a fresh clone works with
+    zero setup.
+
     BaseIntermediateOutputPath must end with a trailing slash and must be
     set before the SDK targets import obj\project.assets.json, which is
     already true for a Directory.Build.props (it's imported very early).
   -->
-  <PropertyGroup>
-    <BaseIntermediateOutputPath>D:\BuildCache\ClaudeWidget\obj\</BaseIntermediateOutputPath>
-    <BaseOutputPath>D:\BuildCache\ClaudeWidget\bin\</BaseOutputPath>
-    <AppxPackageDir>D:\BuildCache\ClaudeWidget\AppPackages\</AppxPackageDir>
+  <PropertyGroup Condition="'$(ClaudeWidgetBuildCacheRoot)' != ''">
+    <BaseIntermediateOutputPath>$(ClaudeWidgetBuildCacheRoot)\ClaudeWidget\obj\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(ClaudeWidgetBuildCacheRoot)\ClaudeWidget\bin\</BaseOutputPath>
+    <AppxPackageDir>$(ClaudeWidgetBuildCacheRoot)\ClaudeWidget\AppPackages\</AppxPackageDir>
   </PropertyGroup>
 </Project>

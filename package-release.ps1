@@ -38,14 +38,20 @@ $RepoRoot       = $PSScriptRoot
 $StagingDir     = Join-Path $RepoRoot "release\staging"
 $OutputDir      = Join-Path $RepoRoot "release\output"
 
-# local.settings.ps1 (gitignored) supplies $CertThumbprint — see
-# local.settings.ps1.example for how to create it.
+# local.settings.ps1 (gitignored) supplies $CertThumbprint and optional
+# $BuildCacheRoot — see local.settings.ps1.example for how to create it.
 $localSettings = Join-Path $RepoRoot "local.settings.ps1"
 if (-not (Test-Path $localSettings)) {
     throw "local.settings.ps1 not found. Copy local.settings.ps1.example to local.settings.ps1 and fill in your cert thumbprint."
 }
 . $localSettings
 $certThumbprint = $CertThumbprint
+
+# $BuildCacheRoot (optional, see Directory.Build.props) redirects build
+# output off C:. Falls back to the repo root, which reproduces MSBuild's
+# native default output location when $BuildCacheRoot is unset.
+$buildRoot = if ($BuildCacheRoot) { $BuildCacheRoot } else { $RepoRoot }
+if ($BuildCacheRoot) { $env:ClaudeWidgetBuildCacheRoot = $BuildCacheRoot }
 
 # --- Locate ISCC.exe (Inno Setup compiler) --------------------------------
 $isccCandidates = @(
@@ -63,19 +69,19 @@ dotnet build "$RepoRoot\ClaudeWidget\ClaudeWidget.csproj" `
     -p:UapAppxPackageBuildMode=SideloadOnly
 if ($LASTEXITCODE -ne 0) { throw "dotnet build failed with exit code $LASTEXITCODE" }
 
-$msixDir = "D:\BuildCache\ClaudeWidget\bin\x64\Release\net8.0-windows10.0.26100.0\win-x64"
+$msixDir = Join-Path $buildRoot "ClaudeWidget\bin\x64\Release\net8.0-windows10.0.26100.0\win-x64"
 $msix = Get-ChildItem -Path $msixDir -Filter "*.msix" | Select-Object -First 1
 if (-not $msix) { throw "No .msix produced under $msixDir" }
 Write-Host "Built: $($msix.FullName)"
 
 # --- Locate signtool (same search order as deploy.ps1) -------------------
 $signtoolCandidates = @(
-    "D:\BuildCache\NuGetPackages\microsoft.windows.sdk.buildtools\10.0.26100.7705\bin\10.0.26100.0\x64\signtool.exe",
+    (Join-Path $buildRoot "NuGetPackages\microsoft.windows.sdk.buildtools\10.0.26100.7705\bin\10.0.26100.0\x64\signtool.exe"),
     "$env:USERPROFILE\.nuget\packages\microsoft.windows.sdk.buildtools\10.0.26100.7705\bin\10.0.26100.0\x64\signtool.exe"
 )
 $signtool = $signtoolCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $signtool) {
-    $found = Get-ChildItem -Path "D:\BuildCache\NuGetPackages\microsoft.windows.sdk.buildtools" -Filter signtool.exe -Recurse -ErrorAction SilentlyContinue |
+    $found = Get-ChildItem -Path (Join-Path $buildRoot "NuGetPackages\microsoft.windows.sdk.buildtools") -Filter signtool.exe -Recurse -ErrorAction SilentlyContinue |
         Where-Object { $_.FullName -like '*x64*' } | Select-Object -First 1
     if ($found) { $signtool = $found.FullName }
 }

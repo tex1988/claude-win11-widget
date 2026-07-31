@@ -28,9 +28,12 @@ not to build/deploy yet.
 ```
 widget2/
   CLAUDE.md                          <- this file
-  .gitignore                         <- ignores build output, release/, local.settings.ps1, stray logs
+  .gitignore                         <- ignores build output, release/, local.settings.ps1, NuGet.config, stray logs
   local.settings.ps1.example         <- template for local.settings.ps1 (checked in)
-  local.settings.ps1                 <- gitignored; holds $CertThumbprint for this machine
+  local.settings.ps1                 <- gitignored; holds $CertThumbprint + optional $BuildCacheRoot for this machine
+  NuGet.config.example                <- template for NuGet.config (checked in)
+  NuGet.config                        <- gitignored; optional NuGet global-packages-folder redirect
+  Directory.Build.props               <- optional build-output redirect; portable (env-var driven, no hardcoded path)
   build.ps1                          <- dotnet build (Debug, x64, produces MSIX)
   deploy.ps1                         <- sign + install MSIX + restart Widgets sidebar
   package-release.ps1                <- build Release MSIX + wrap into ClaudeWidgetSetup.exe installer
@@ -238,7 +241,25 @@ Copy-Item local.settings.ps1.example local.settings.ps1
 # note under deploy.ps1's steps below for how to find/verify it).
 ```
 `build.ps1`, `readlog.ps1`, `checklog.ps1`, and `killwidget.ps1` don't need
-this file — only the two signing scripts do.
+this file — only the two signing scripts strictly require it (for
+`$CertThumbprint`).
+
+`local.settings.ps1` also supports an **optional** `$BuildCacheRoot` (e.g.
+`"D:\BuildCache"`) that redirects build output (`bin`/`obj`/`AppPackages`)
+and, if you also copy `NuGet.config.example` to `NuGet.config`, restored
+NuGet packages off `C:` — useful if `C:` is a small SSD. Leave it empty (the
+default) and everything builds fine with zero setup, output landing under
+`ClaudeWidget\bin\obj\` as usual. `build.ps1`, `deploy.ps1`, and
+`package-release.ps1` all read it (when present) and fall back to standard
+local defaults when it's unset — see `Directory.Build.props` for how the
+redirect itself is wired up via the `ClaudeWidgetBuildCacheRoot` environment
+variable.
+
+If you want the optional NuGet packages-folder redirect too:
+```powershell
+Copy-Item NuGet.config.example NuGet.config
+# then edit NuGet.config and set globalPackagesFolder to match $BuildCacheRoot
+```
 
 ## Build & deploy
 
@@ -253,7 +274,7 @@ powershell -File deploy.ps1
 powershell -File killwidget.ps1
 ```
 
-MSIX output: `D:\BuildCache\ClaudeWidget\bin\x64\Debug\net8.0-windows10.0.26100.0\win-x64\ClaudeWidget_1.0.0.0_x64_Debug.msix` (this is the loose per-architecture MSIX `deploy.ps1` actually signs/installs — see note below on why the `AppPackages\` path is not used)
+MSIX output: `ClaudeWidget\bin\x64\Debug\net8.0-windows10.0.26100.0\win-x64\ClaudeWidget_1.0.0.0_x64_Debug.msix` under the repo root, or under `$BuildCacheRoot\ClaudeWidget\bin\...` instead if `local.settings.ps1` sets `$BuildCacheRoot` (e.g. `D:\BuildCache` on this machine) — this is the loose per-architecture MSIX `deploy.ps1` actually signs/installs — see note below on why the `AppPackages\` path is not used
 
 ### What the build step actually does
 
@@ -265,13 +286,13 @@ MSIX output: `D:\BuildCache\ClaudeWidget\bin\x64\Debug\net8.0-windows10.0.26100.
 - `-p:UapAppxPackageBuildMode=SideloadOnly` — packages for sideloading (no Store association needed), appropriate for a locally-signed dev cert install rather than a Store submission.
 
 Output lands in (at least) one reliable place:
-- Raw build + loose MSIX: `D:\BuildCache\ClaudeWidget\bin\x64\Debug\net8.0-windows10.0.26100.0\win-x64\` — contains `ClaudeWidget.dll` (+ exe, deps) **and** `ClaudeWidget_1.0.0.0_x64_Debug.msix`. This loose per-architecture `.msix` is the file `deploy.ps1` signs and installs.
+- Raw build + loose MSIX: `ClaudeWidget\bin\x64\Debug\net8.0-windows10.0.26100.0\win-x64\` (under `$BuildCacheRoot` instead of the repo root if that's set — see "Repo setup" above) — contains `ClaudeWidget.dll` (+ exe, deps) **and** `ClaudeWidget_1.0.0.0_x64_Debug.msix`. This loose per-architecture `.msix` is the file `deploy.ps1` signs and installs.
 - `AppPackages\` may also contain a build output (e.g. a `.msixbundle`), but its exact folder name and contents have changed across clean rebuilds (see `deploy.ps1`'s inline comment) — don't rely on a hardcoded `AppPackages\...` path; use the `bin\x64\Debug\...\win-x64\` loose `.msix` instead.
 
 ### What `deploy.ps1` actually does (step by step)
 
-1. **Locate signtool** — searches a couple of known NuGet cache paths for `signtool.exe` (from the `Microsoft.Windows.SDK.BuildTools` package), falling back to a recursive `Get-ChildItem` search under `D:\BuildCache\NuGetPackages\microsoft.windows.sdk.buildtools` if the hardcoded paths don't match (e.g. after a SDK version bump).
-2. **Sign the MSIX** — `signtool sign /fd SHA256 /sha1 $certThumbprint /s My $msix`, signing directly from the certificate already installed in `Cert:\CurrentUser\My` (subject `CN=ClaudeUsageWidgetLocal`, matching `Package.appxmanifest`'s `Publisher`) rather than a `.pfx` file on disk. This is why `AppxPackageSigningEnabled=false` was used at build time — signing is done here instead. `$certThumbprint` comes from dot-sourcing gitignored `local.settings.ps1` (see "Repo setup" above) rather than being hardcoded in the script. Exits early (`exit 1`) if `signtool` fails.
+1. **Locate signtool** — searches a couple of known NuGet cache paths for `signtool.exe` (from the `Microsoft.Windows.SDK.BuildTools` package), falling back to a recursive `Get-ChildItem` search under `$buildRoot\NuGetPackages\microsoft.windows.sdk.buildtools` if the hardcoded paths don't match (e.g. after a SDK version bump). `$buildRoot` is `$BuildCacheRoot` from `local.settings.ps1` when set, otherwise the repo root itself — both the MSIX path and this signtool search are computed from it.
+2. **Sign the MSIX** — `signtool sign /fd SHA256 /sha1 $certThumbprint /s My $msix`, signing directly from the certificate already installed in `Cert:\CurrentUser\My` (subject `CN=ClaudeUsageWidgetLocal`, matching `Package.appxmanifest`'s `Publisher`) rather than a `.pfx` file on disk. This is why `AppxPackageSigningEnabled=false` was used at build time — signing is done here instead. `$certThumbprint` (required) and `$BuildCacheRoot` (optional, see above) both come from dot-sourcing gitignored `local.settings.ps1` (see "Repo setup" above) rather than being hardcoded in the script. Exits early (`exit 1`) if `signtool` fails.
    - **Original approach (`.pfx` file) is gone/broken:** the script used to reference a `.pfx` at `C:\Users\zinke\Desktop\widget\package\ClaudeUsageWidgetLocal.pfx`, which no longer exists on this machine — `signtool sign /f ... /p ...` failed with "Store IsDiskFile() failed." Fixed by signing straight from the cert store instead.
    - **Certificate thumbprint matters — must be the one trusted machine-wide.** Two `CN=ClaudeUsageWidgetLocal` certs can exist in `Cert:\CurrentUser\My` with different thumbprints (e.g. from being regenerated at different times). `Add-AppxPackage` requires the signing cert to be trusted specifically in `Cert:\LocalMachine\TrustedPeople` — signing with a thumbprint that's only in `Cert:\CurrentUser\TrustedPeople` (not machine-wide) will sign successfully but then fail install with `HRESULT 0x800B0109` ("cert chain terminated in an untrusted root"/untrusted publisher). Verify which thumbprint is machine-trusted with `Get-ChildItem Cert:\LocalMachine\TrustedPeople | Where Subject -match ClaudeUsageWidgetLocal` and make sure `deploy.ps1`'s `$certThumbprint` matches it exactly.
 3. **Kill old process** — `Stop-Process -Force` on any running `ClaudeWidget` process, so the subsequent package removal/install isn't blocked by file locks on the old binary.
@@ -319,4 +340,6 @@ powershell -File readlog.ps1 -Last 40
 - **`AppPackages\` output path/naming is unstable across clean rebuilds** — don't hardcode a path under it. `deploy.ps1` signs/installs the loose `.msix` from `bin\x64\Debug\...\win-x64\` instead, which is reliably produced regardless of how `AppPackages\`'s folder naming shifts.
 - **Use `powershell -File build.ps1`, not `pwsh`** — same rule as the other scripts in this repo.
 - **`local.settings.ps1` is required and gitignored** — a fresh clone won't have it; `deploy.ps1`/`package-release.ps1` `throw` with a copy-paste-able fix (`Copy-Item local.settings.ps1.example local.settings.ps1`) if it's missing rather than failing on an undefined `$CertThumbprint`. Never hardcode the thumbprint back into the scripts or commit `local.settings.ps1` itself.
+- **`$BuildCacheRoot` (in `local.settings.ps1`) is optional and never `throw`s** — unlike `$CertThumbprint`, it's fine for it to be empty/unset. `build.ps1`, `deploy.ps1`, and `package-release.ps1` all fall back to the repo root when it's unset, which reproduces MSBuild's native default output location exactly (since `ClaudeWidget\` sits directly under the repo root). `Directory.Build.props` itself stays committed (not gitignored) — it's now a no-op unless the `ClaudeWidgetBuildCacheRoot` environment variable is set, so it no longer bakes in a machine-specific path.
 - **`.gitignore` covers `bin/`, `obj/`, `AppPackages/`, `BundleArtifacts/`, and `release/`** (all regenerated by `build.ps1`/`package-release.ps1`) plus stray logs (`*.log`, `diag_log*.txt`) and the Windows redirection-typo artifact `nul`. If one of these reappears in `git status`, it's build output that shouldn't be staged, not a sign something's wrong.
+- **`NuGet.config` is also gitignored**, mirroring the `local.settings.ps1` pattern — `NuGet.config.example` is the checked-in template. Real `NuGet.config` is optional (only needed to redirect the NuGet global packages folder off `C:`); its absence doesn't break anything, `dotnet restore` just uses the standard `%USERPROFILE%\.nuget\packages` location.
