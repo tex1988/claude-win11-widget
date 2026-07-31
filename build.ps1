@@ -1,0 +1,1 @@
+dotnet build "ClaudeWidget/ClaudeWidget.csproj" -c Debug -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false -p:UapAppxPackageBuildMode=SideloadOnly

@@ -1,0 +1,13 @@
+<Project>
+  <!--
+    Redirect build output (bin/obj/AppPackages) to D: to save space on C:.
+    BaseIntermediateOutputPath must end with a trailing slash and must be
+    set before the SDK targets import obj\project.assets.json, which is
+    already true for a Directory.Build.props (it's imported very early).
+  -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>D:\BuildCache\ClaudeWidget\obj\</BaseIntermediateOutputPath>
+    <BaseOutputPath>D:\BuildCache\ClaudeWidget\bin\</BaseOutputPath>
+    <AppxPackageDir>D:\BuildCache\ClaudeWidget\AppPackages\</AppxPackageDir>
+  </PropertyGroup>
+</Project>

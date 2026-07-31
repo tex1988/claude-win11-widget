@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="ClaudeWidget.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16" Padding="32" MaxWidth="560" HorizontalAlignment="Left">
+
+            <TextBlock Text="Claude Monitor"
+                       Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock x:Name="SubtitleTextBlock"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+            <InfoBar x:Name="StatusBar"
+                     IsOpen="True" IsClosable="False"
+                     Severity="Informational" />
+
+            <!-- ── Not signed in ── -->
+            <StackPanel x:Name="SignInPanel" Spacing="12">
+                <TextBlock x:Name="AuthorizationHeaderTextBlock"
+                           Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock x:Name="AuthorizationBodyTextBlock"
+                           TextWrapping="Wrap"
+                           Style="{StaticResource BodyTextBlockStyle}" />
+                <StackPanel Spacing="8">
+                    <TextBox x:Name="SessionKeyTextBox" />
+                    <Button x:Name="SubmitSessionKeyButton"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Click="SubmitSessionKeyButton_Click" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- ── Signed in ── -->
+            <StackPanel x:Name="SignedInPanel" Visibility="Collapsed" Spacing="12">
+                <TextBlock x:Name="StatusHeaderTextBlock"
+                           Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock x:Name="SignedInBodyTextBlock"
+                           TextWrapping="Wrap"
+                           Style="{StaticResource BodyTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button x:Name="SignOutButton"
+                            Click="SignOutButton_Click" />
+                </StackPanel>
+            </StackPanel>
+
+            <InfoBar x:Name="ActionBar" IsOpen="False" IsClosable="True" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

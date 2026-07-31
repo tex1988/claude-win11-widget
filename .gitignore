@@ -1,0 +1,23 @@
+# Machine-specific signing config (cert thumbprint) — see local.settings.ps1.example
+local.settings.ps1
+
+# .NET / MSBuild build output (also redirected to D:\BuildCache by Directory.Build.props,
+# but ignore locally too in case that redirect isn't in effect)
+bin/
+obj/
+AppPackages/
+BundleArtifacts/
+
+# package-release.ps1 output (regenerated installer + staging files)
+release/
+
+# Claude Code local/session-specific settings
+.claude/settings.local.json
+
+# Windows/PowerShell redirection mistakes and stray logs
+nul
+*.log
+diag_log*.txt
+
+# Editor/IDE
+.vs/

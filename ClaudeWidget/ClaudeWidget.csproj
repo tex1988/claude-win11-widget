@@ -1,0 +1,146 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>ClaudeWidget</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x86;x64;ARM64</Platforms>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
+    <PublishProfile Condition="Exists('Properties\PublishProfiles\win-$(Platform).pubxml')">win-$(Platform).pubxml</PublishProfile>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- We provide our own Main() so the process can also run headless as a
+         COM server for the widget provider (invoked by the Widgets host with
+         "-RegisterProcessAsComServer"). -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <!-- Self-contained Windows App SDK: bakes the Windows App Runtime
+         binaries directly into the MSIX instead of declaring a
+         PackageDependency on a separately-installed framework package.
+         This avoids needing a separate Windows App SDK Runtime install
+         step (and the ~110MB bundled installer + confirmation prompt in
+         the setup .exe) on every target machine. Tradeoff: a larger MSIX
+         (framework baked into every install) and no shared/auto-updating
+         framework across apps, but zero extra install steps for users. -->
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Widgets\Templates\UsageCardTemplate.json" />
+    <Content Include="Widgets\Templates\AuthCardTemplate.json" />
+    <Content Include="Assets\SplashScreen.scale-200.png" />
+    <Content Include="Assets\LockScreenLogo.scale-200.png" />
+    <Content Include="Assets\Square150x150Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-48_altform-lightunplated.png" />
+    <Content Include="Assets\StoreLogo.png" />
+    <Content Include="Assets\AppIcon.ico" />
+    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <!--
+    Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
+    Tools extension to be activated for this project even if the Windows App SDK Nuget
+    package has not yet been restored.
+  -->
+  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <ProjectCapability Include="Msix" />
+  </ItemGroup>
+
+  <!--
+    Microsoft.Windows.SDK.BuildTools.WinApp adds first-class support for
+    `dotnet run` on packaged WinUI apps: it hooks the .NET CLI Run target to
+    register a debug identity via the winapp CLI and launch the app with
+    package identity (AUMID).
+    Set <EnableWinAppRunSupport>false</EnableWinAppRunSupport> in a
+    <PropertyGroup> above to opt out.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2270" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.WinApp" Version="0.4.0" />
+    <!-- Kept as a fallback fetch path in HiddenWebViewFetcher, in case
+         TlsClientFetcher's TLS-fingerprint impersonation ever stops working
+         against Cloudflare (see Services/TlsClientFetcher.cs for details on
+         why it is now the primary path instead of WebView2). -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4078.44" />
+    <!-- Primary fetch path: TLS-fingerprint-impersonating HTTP client
+         (wraps bogdanfinn/tls-client via native P/Invoke) that mimics a real
+         Chrome TLS ClientHello, passing Cloudflare's bot-detection without
+         paying WebView2's ~80-100 MB persistent process-tree memory cost. -->
+    <PackageReference Include="TlsClient.Native" Version="0.4.7" />
+    <PackageReference Include="TlsClient.Native.win-x64" Version="1.15.1" GeneratePathProperty="true" />
+    <PackageReference Include="TlsClient.Native.win-x32" Version="1.15.1" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <!--
+    TlsClient.Native.win-{x64,x32}'s buildTransitive .targets file copies
+    tls-client.dll into the plain-publish output directory, but MSIX
+    packaging (used for the widget) doesn't pick up files under a
+    "runtimes\..." subfolder the way normal framework-dependent publish
+    does — it only packages files that are explicit MSBuild items (Content /
+    None with CopyToOutputDirectory, etc.). So reference the native DLL
+    straight from the NuGet package cache (via the GeneratePathProperty
+    Pkg* variables above) as an explicit Content item, matching the same
+    "runtimes\tls-client\win\{x64,x32}\tls-client.dll" relative path that
+    TlsClientFetcher.ResolveLibraryPath() looks for next to the app's own
+    binaries at runtime.
+  -->
+  <ItemGroup Condition="'$(Platform)' == 'x64' Or '$(RuntimeIdentifier)' == 'win-x64'">
+    <Content Include="$(NuGetPackageRoot)\tlsclient.native.win-x64\1.15.1\runtimes\tls-client\win\x64\tls-client.dll">
+      <Link>runtimes\tls-client\win\x64\tls-client.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)' == 'x86' Or '$(RuntimeIdentifier)' == 'win-x86'">
+    <Content Include="$(NuGetPackageRoot)\tlsclient.native.win-x32\1.15.1\runtimes\tls-client\win\x32\tls-client.dll">
+      <Link>runtimes\tls-client\win\x32\tls-client.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!--
+    Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
+    Explorer "Package and Publish" context menu entry to be enabled for this project even if
+    the Windows App SDK Nuget package has not yet been restored.
+  -->
+  <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+  </PropertyGroup>
+
+  <!-- Publish Properties -->
+  <PropertyGroup>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
+    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <!--
+      Trimming disabled: PublishTrimmed used to default to true for non-Debug
+      builds, which sets the "System.Runtime.InteropServices.BuiltInComInterop.IsSupported"
+      runtime feature switch to false. That switch removes
+      System.StubHelpers.InterfaceMarshaler from the trimmed output, which is
+      required by our own ComRegistration.cs's raw CoRegisterClassObject
+      P/Invoke (it marshals an arbitrary managed object to IUnknown* via
+      [MarshalAs(UnmanagedType.IUnknown)], i.e. legacy built-in COM interop).
+      Confirmed root cause: the widget COM-server process was throwing
+      System.TypeLoadException: "Could not load type
+      'System.StubHelpers.InterfaceMarshaler' from assembly
+      'System.Private.CoreLib'" inside CoRegisterClassObject, immediately
+      after every Widgets-host activation attempt, on a Release/trimmed
+      build (this app's many pre-existing IL2026/IL2050/IL2059 trim warnings
+      throughout the codebase (JSON serialization, this same COM interop)
+      were the other symptoms of trimming being a poor fit for this app).
+      Disabling PublishTrimmed entirely (rather than trying to re-enable just
+      the one feature switch) sidesteps this whole class of trim-related
+      breakage; the app is small enough that the larger untrimmed output size
+      is an acceptable tradeoff.
+    -->
+    <PublishTrimmed>False</PublishTrimmed>
+  </PropertyGroup>
+</Project>

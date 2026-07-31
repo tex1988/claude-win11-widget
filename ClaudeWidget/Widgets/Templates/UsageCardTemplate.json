@@ -1,0 +1,380 @@
+{
+  "type": "AdaptiveCard",
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "${currentSessionLabel}",
+      "size": "Medium",
+      "weight": "Bolder",
+      "wrap": true
+    },
+    {
+      "type": "ColumnSet",
+      "spacing": "Small",
+      "verticalContentAlignment": "Center",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "stretch",
+          "verticalContentAlignment": "Center",
+          "items": [
+            {
+              "type": "Image",
+              "url": "${sessionBarUri}",
+              "size": "Stretch",
+              "altText": "${sessionPercent}% used",
+              "spacing": "None"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "auto",
+          "verticalContentAlignment": "Center",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${sessionPercent}%",
+              "size": "Small",
+              "weight": "Bolder",
+              "color": "${sessionColor}",
+              "isSubtle": "${sessionTextSubtle}",
+              "horizontalAlignment": "Right",
+              "wrap": false,
+              "spacing": "None"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "${sessionResetLine}",
+      "size": "Small",
+      "isSubtle": true,
+      "spacing": "Small",
+      "wrap": true
+    },
+    {
+      "type": "Image",
+      "url": "${separatorUri}",
+      "size": "Stretch",
+      "spacing": "Large",
+      "altText": "",
+      "separator": false
+    },
+    {
+      "type": "TextBlock",
+      "text": "${weeklyLimitsLabel}",
+      "size": "Medium",
+      "weight": "Bolder",
+      "spacing": "Medium",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "${allModelsLabel}",
+      "size": "Default",
+      "weight": "Bolder",
+      "isSubtle": true,
+      "spacing": "Small",
+      "wrap": true
+    },
+    {
+      "type": "ColumnSet",
+      "spacing": "Small",
+      "verticalContentAlignment": "Center",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "stretch",
+          "verticalContentAlignment": "Center",
+          "items": [
+            {
+              "type": "Image",
+              "url": "${weeklyBarUri}",
+              "size": "Stretch",
+              "altText": "${weeklyPercent}% used",
+              "spacing": "None"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "auto",
+          "verticalContentAlignment": "Center",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${weeklyPercent}%",
+              "size": "Small",
+              "weight": "Bolder",
+              "color": "${weeklyColor}",
+              "isSubtle": "${weeklyTextSubtle}",
+              "horizontalAlignment": "Right",
+              "wrap": false,
+              "spacing": "None"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "${weeklyResetLine}",
+      "size": "Small",
+      "isSubtle": true,
+      "spacing": "Small",
+      "wrap": true
+    },
+    {
+      "type": "Image",
+      "url": "${separatorUri}",
+      "size": "Stretch",
+      "spacing": "Large",
+      "altText": "",
+      "separator": false,
+      "$when": "${hasPlanAndPaymentLine}"
+    },
+    {
+      "type": "TextBlock",
+      "text": "${planAndPaymentLine}",
+      "size": "Small",
+      "weight": "${nextPaymentWeight}",
+      "color": "${nextPaymentColor}",
+      "isSubtle": false,
+      "spacing": "Medium",
+      "wrap": true,
+      "$when": "${hasPlanAndPaymentLine}"
+    },
+    {
+      "type": "ColumnSet",
+      "spacing": "Small",
+      "$when": "${hasCreditToggle}",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "auto",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${creditHeaderLabel}",
+              "size": "Small",
+              "weight": "${nextPaymentWeight}",
+              "color": "${nextPaymentColor}",
+              "isSubtle": false,
+              "wrap": true,
+              "spacing": "None"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "auto",
+          "spacing": "Small",
+          "selectAction": {
+            "type": "Action.Execute",
+            "verb": "ToggleCredit",
+            "data": { "enable": "${creditToggleEnable}" }
+          },
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${creditHeaderValue}",
+              "size": "Small",
+              "weight": "Bolder",
+              "color": "Accent",
+              "isSubtle": false,
+              "wrap": true,
+              "spacing": "None"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ColumnSet",
+      "spacing": "Small",
+      "$when": "${hasCreditNonToggle}",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "auto",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${creditHeaderLabel}",
+              "size": "Small",
+              "weight": "${nextPaymentWeight}",
+              "color": "${nextPaymentColor}",
+              "isSubtle": false,
+              "wrap": true,
+              "spacing": "None"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "auto",
+          "spacing": "Small",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${creditHeaderValue}",
+              "size": "Small",
+              "weight": "Bolder",
+              "color": "${nextPaymentColor}",
+              "isSubtle": true,
+              "wrap": true,
+              "spacing": "None"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "${creditBalanceLine}",
+      "size": "Small",
+      "weight": "${nextPaymentWeight}",
+      "color": "${nextPaymentColor}",
+      "isSubtle": false,
+      "spacing": "None",
+      "wrap": true,
+      "$when": "${hasCredit}"
+    },
+    {
+      "type": "ColumnSet",
+      "spacing": "None",
+      "$when": "${hasCreditLimitClickable}",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "auto",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${creditMonthlyLimitLabel}",
+              "size": "Small",
+              "isSubtle": true,
+              "wrap": true,
+              "spacing": "None"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "auto",
+          "spacing": "Small",
+          "selectAction": {
+            "type": "Action.Execute",
+            "verb": "OpenSetLimit",
+            "data": { "value": "${currentMonthlyLimitValue}" }
+          },
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${creditMonthlyLimitValue}",
+              "size": "Small",
+              "weight": "Bolder",
+              "color": "Accent",
+              "isSubtle": false,
+              "wrap": true,
+              "spacing": "None"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ColumnSet",
+      "spacing": "None",
+      "$when": "${hasCreditLimitPlain}",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "auto",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${creditMonthlyLimitLabel}",
+              "size": "Small",
+              "isSubtle": true,
+              "wrap": true,
+              "spacing": "None"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "auto",
+          "spacing": "Small",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${creditMonthlyLimitValue}",
+              "size": "Small",
+              "weight": "Bolder",
+              "isSubtle": true,
+              "wrap": true,
+              "spacing": "None"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "${promoCreditsLine}",
+      "size": "Small",
+      "isSubtle": true,
+      "spacing": "Small",
+      "wrap": true,
+      "$when": "${hasPromoCredit}"
+    },
+    {
+      "type": "ColumnSet",
+      "spacing": "Medium",
+      "verticalContentAlignment": "Center",
+      "horizontalAlignment": "Left",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "auto",
+          "verticalContentAlignment": "Center",
+          "selectAction": {
+            "type": "Action.Execute",
+            "verb": "Refresh",
+            "title": "${refreshLabel}"
+          },
+          "items": [
+            {
+              "type": "Image",
+              "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACEAAAAhCAYAAABX5MJvAAAEXElEQVR4AcyXSWhUWRSGa8D0QNsVe9OS2AONTbUdGhoVEjOZOBCJM0gcFy7EcS0YCAkK6saFGxURERFRIupCjbNlzGDQqCgEHEDBIYqilRQOVYlJ+Z3y3ct7VfVePeEhhvPXOffcc8/9350T8H0Df7YkWlpavvta/GxJhEKh5p6enrx0IuJrb28Pd3Z2zkCvBvVgBeVZXV1dY9Lj3ZRtSdB4RjQaPdzc3BzE9rW1tU2gs4N9fX1v/X7/3WQyeRq9C2wBeyifGBoaetLR0XEHQhvBL9LODZxIJEk+v7Cw8ACJ9wUCgW7KS0g6AjjJfxBqBA8hXa8+wqmBEwm/0XAxejlQch8ym8Ds4eHhapw1YCXYDK6ABBAJEbOFjzgbiUR+Eocd3JDQbfm6uWVlZeHS0tImcLKiouIy5XNgD2gAk+m4gAaHgJKpeXl5XUznKOVI104kkhnBgUBjd3d3KN1vLkPuDWSWQKYO/3sgUkT5BG2zTqUTCTUdkiQFRmJCIpE4n2t4JRgyR4LB4P/Yj4EPEmW03S52OmxJ0GErwdnwnuFtoC6nlJSUPKBzWTNRI3gNu2asYWtlS6K8vHw6w1plgw06Qw6DEZHtvN4I8/NxTYatlYUEW3EbTDe6GW6dwYUxODi4n7DUtKAXc6j9jNaiScBQ1sAydCPDHdERHhjV1dUfSbMTiATZ2vPEUNAkOFjG4/wViNyUHy9Bx0dUPj60VtmiNQlOxD/FYeCqoT1TnCkPSfYaiPwtPwqaBKtYXz7YL1SAx1qti9/MeTUJhuh7VcHQvVO2x7rPyDfS0CmlSVB6CVLC1IxOGd7/qNHuNafWJJiC56aKP0y2JyZH9o8kUnmfYmvRJDhir+NV98VMbE8lHo9PI6F6JElfFD+LJlFcXCwrt03crI8qtqzchlL0BOR8Bh5JMqb7uGgFTcJwHDa0j8B6ZXuh2aI3YrHYOIg0cadYjgALifz8/L10mFo0BK9iNMKUXQlH8RjeDFUO+L22tjbBnSQPomFzUguJoqKiATrfagSMYLFeIrk6RQ13dtXf3x9l9DaBSDaQa2n2lj6fhYQE9fb27kKru6OAx2t7a2ur5XChPkNqamreQWQ6nZ3OqMzhyCBRV1c3xE6RC+aB0XYs5WvcsFOMsq2S4ebhMocAy5xTljWmdp4ULcggIbUsnBgjMBn7NpBX0Wj0RYicAYtYK5adwxT68YWpW8sNLNtvEvGuJSsJaV1ZWfl8YGCgHPsUUCKvpEMM+TM6jPH26EFfR3/Ad5egHUCedKiUvEr95vixJSHteAe85WU1C1s6v4U2y0hG4F8cE4HlX0b8jyC1mo8oQB+j3lEcSaiWEJFn/XgSypujgU4uUHcfyIUUR98DR8E6YsaxDf/iWbebj/jIGlmI3zyaFK3iioRqQuJbENpMJ/L+DGOPAj+Af8ACsJMYmRbVxCdEGJEFyWSyUzvTjC8ikdbWdREicQjKf2dZ23wVEll7Njk/AQAA//+WmkF7AAAABklEQVQDALnrvlKMjObRAAAAAElFTkSuQmCC",
+              "width": "16px",
+              "height": "16px"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "auto",
+          "verticalContentAlignment": "Center",
+          "spacing": "Small",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${lastUpdated}",
+              "size": "Small",
+              "isSubtle": true,
+              "wrap": false,
+              "spacing": "None"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

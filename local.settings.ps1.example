@@ -1,0 +1,13 @@
+# local.settings.ps1.example
+#
+# Copy this file to local.settings.ps1 (same folder) and fill in the values
+# for your machine. local.settings.ps1 is gitignored — it holds machine-
+# specific signing config and is dot-sourced by deploy.ps1/package-release.ps1.
+
+# Thumbprint of the local code-signing certificate (subject
+# CN=ClaudeUsageWidgetLocal) used to sign the MSIX. It must be trusted
+# machine-wide, i.e. present in Cert:\LocalMachine\TrustedPeople, or
+# Add-AppxPackage will fail with HRESULT 0x800B0109 (untrusted publisher).
+# Find/verify it with:
+#   Get-ChildItem Cert:\LocalMachine\TrustedPeople | Where Subject -match ClaudeUsageWidgetLocal
+$CertThumbprint = "PUT_YOUR_CERT_THUMBPRINT_HERE"

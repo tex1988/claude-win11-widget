@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  IgnorableNamespaces="uap uap3 rescap mp">
+
+  <Identity
+    Name="ClaudeWidget"
+    Publisher="CN=ClaudeUsageWidgetLocal"
+    Version="1.0.0.0" />
+
+  <mp:PhoneIdentity PhoneProductId="4DC51627-A3F1-4BD4-AD2C-1254C9F5FC82" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+
+  <Properties>
+    <DisplayName>Claude Limits</DisplayName>
+    <PublisherDisplayName>AppPublisher</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26226.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26226.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-US" />
+    <Resource Language="ru-RU" />
+    <Resource Language="uk-UA" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="$targetnametoken$.exe"
+      EntryPoint="$targetentrypoint$">
+      <uap:VisualElements
+        DisplayName="Claude Limits"
+        Description="ms-resource:AppDescription"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" ShortName="Claude Limits" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+      </uap:VisualElements>
+
+      <Extensions>
+        <!-- COM server registration: OS launches us with -RegisterProcessAsComServer
+             when the Widgets host needs to activate our widget provider. -->
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:ExeServer Executable="ClaudeWidget.exe"
+                           Arguments="-RegisterProcessAsComServer"
+                           DisplayName="Claude Widget Provider">
+              <!-- Guid MUST match [Guid] on ClaudeUsageWidgetProvider and WidgetProvider > Activation below -->
+              <com:Class Id="2494E3C1-531B-41C8-87CB-E68A4A4F2F7F"
+                         DisplayName="Claude Usage Widget Provider" />
+            </com:ExeServer>
+          </com:ComServer>
+        </com:Extension>
+
+        <!-- Widget registration: advertises this app as a widget provider to the
+             Windows 11 Widgets Board (Win + W). -->
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension
+            Name="com.microsoft.windows.widgets"
+            DisplayName="Claude Limits"
+            Id="claude.widget.provider"
+            PublicFolder="Public">
+            <uap3:Properties>
+              <WidgetProvider>
+                <ProviderIcons>
+                  <Icon Path="Assets\StoreLogo.png" />
+                </ProviderIcons>
+                <Activation>
+                  <CreateInstance ClassId="2494E3C1-531B-41C8-87CB-E68A4A4F2F7F" />
+                </Activation>
+                <Definitions>
+                  <Definition Id="ClaudeUsageWidget"
+                              DisplayName="Claude Limits"
+                              Description="ms-resource:WidgetDescription">
+                    <Capabilities>
+                      <Capability>
+                        <Size Name="medium" />
+                      </Capability>
+                      <Capability>
+                        <Size Name="large" />
+                      </Capability>
+                    </Capabilities>
+                    <ThemeResources>
+                      <Icons>
+                        <Icon Path="Assets\StoreLogo.png" />
+                      </Icons>
+                      <Screenshots>
+                        <Screenshot Path="Assets\Square150x150Logo.png" DisplayAltText="Claude usage widget" />
+                      </Screenshots>
+                      <DarkMode />
+                      <LightMode />
+                    </ThemeResources>
+                  </Definition>
+                </Definitions>
+              </WidgetProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <!-- URI protocol: lets the COM server open the main app window via Launcher.LaunchUriAsync("claudewidget:") -->
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="claudewidget">
+            <uap:DisplayName>Claude Widget</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <Capability Name="internetClient" />
+  </Capabilities>
+</Package>
