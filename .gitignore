@@ -14,8 +14,8 @@ BundleArtifacts/
 # package-release.ps1 output (regenerated installer + staging files)
 release/
 
-# Claude Code local/session-specific settings
-.claude/settings.local.json
+# Claude Code local/session-specific settings and data
+.claude/
 
 # Windows/PowerShell redirection mistakes and stray logs
 nul
