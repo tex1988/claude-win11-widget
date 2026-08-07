@@ -869,6 +869,9 @@ public readonly record struct UsageResult(
     /// half is available if the other one failed to fetch. Empty if
     /// neither is available — the card hides the whole row in that case.
     /// </summary>
+    /// <summary>Just the plan name bold (e.g. "**Тариф Pro**"), empty if unavailable.</summary>
+    public string PlanLine => !string.IsNullOrEmpty(PlanName) ? $"**{PlanName}**" : string.Empty;
+
     public string PlanAndPaymentLine
     {
         get

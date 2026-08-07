@@ -140,14 +140,25 @@
     },
     {
       "type": "TextBlock",
-      "text": "${planAndPaymentLine}",
+      "text": "${planLine}",
+      "size": "Small",
+      "weight": "Bolder",
+      "color": "Default",
+      "isSubtle": false,
+      "spacing": "Medium",
+      "wrap": true,
+      "$when": "${hasPlanLine}"
+    },
+    {
+      "type": "TextBlock",
+      "text": "${paymentLine}",
       "size": "Small",
       "weight": "${nextPaymentWeight}",
       "color": "${nextPaymentColor}",
       "isSubtle": false,
-      "spacing": "Medium",
+      "spacing": "Small",
       "wrap": true,
-      "$when": "${hasPlanAndPaymentLine}"
+      "$when": "${hasPaymentLine}"
     },
     {
       "type": "ColumnSet",
@@ -162,8 +173,8 @@
               "type": "TextBlock",
               "text": "${creditHeaderLabel}",
               "size": "Small",
-              "weight": "${nextPaymentWeight}",
-              "color": "${nextPaymentColor}",
+              "weight": "Default",
+              "color": "Default",
               "isSubtle": false,
               "wrap": true,
               "spacing": "None"
@@ -207,8 +218,8 @@
               "type": "TextBlock",
               "text": "${creditHeaderLabel}",
               "size": "Small",
-              "weight": "${nextPaymentWeight}",
-              "color": "${nextPaymentColor}",
+              "weight": "Default",
+              "color": "Default",
               "isSubtle": false,
               "wrap": true,
               "spacing": "None"
@@ -225,7 +236,7 @@
               "text": "${creditHeaderValue}",
               "size": "Small",
               "weight": "Bolder",
-              "color": "${nextPaymentColor}",
+              "color": "Default",
               "isSubtle": true,
               "wrap": true,
               "spacing": "None"
@@ -238,8 +249,8 @@
       "type": "TextBlock",
       "text": "${creditBalanceLine}",
       "size": "Small",
-      "weight": "${nextPaymentWeight}",
-      "color": "${nextPaymentColor}",
+      "weight": "Default",
+      "color": "Default",
       "isSubtle": false,
       "spacing": "None",
       "wrap": true,
