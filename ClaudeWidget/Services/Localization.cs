@@ -45,6 +45,7 @@ public enum Str
     PromoTrancheWithExpiry,  // "${0} until {1}" (single tranche within PromotionalCredits)
     ExpiresLabel,            // "Expires: {0}"
     PlanFree,
+    NoUsageLimits,
     PlanPro,
     PlanMax,
     PlanTeam,
@@ -238,6 +239,7 @@ public static class Localization
             [Str.PromoTrancheWithExpiry] = "${0} until {1}",
             [Str.ExpiresLabel] = "Expires: {0}",
             [Str.PlanFree] = "Free plan",
+            [Str.NoUsageLimits] = "No usage limits to track",
             [Str.PlanPro] = "Pro plan",
             [Str.PlanMax] = "Max plan",
             [Str.PlanTeam] = "Team plan",
@@ -328,6 +330,7 @@ public static class Localization
             [Str.PromoTrancheWithExpiry] = "${0} до {1}",
             [Str.ExpiresLabel] = "Истекает: {0}",
             [Str.PlanFree] = "Тариф Free",
+            [Str.NoUsageLimits] = "Нет лимитов для отслеживания",
             [Str.PlanPro] = "Тариф Pro",
             [Str.PlanMax] = "Тариф Max",
             [Str.PlanTeam] = "Тариф Team",
@@ -418,6 +421,7 @@ public static class Localization
             [Str.PromoTrancheWithExpiry] = "${0} до {1}",
             [Str.ExpiresLabel] = "Закінчується: {0}",
             [Str.PlanFree] = "Тариф Free",
+            [Str.NoUsageLimits] = "Немає лімітів для відстеження",
             [Str.PlanPro] = "Тариф Pro",
             [Str.PlanMax] = "Тариф Max",
             [Str.PlanTeam] = "Тариф Team",

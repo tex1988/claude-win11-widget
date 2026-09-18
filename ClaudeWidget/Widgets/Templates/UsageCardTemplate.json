@@ -8,12 +8,14 @@
       "text": "${currentSessionLabel}",
       "size": "Medium",
       "weight": "Bolder",
-      "wrap": true
+      "wrap": true,
+      "$when": "${hasUsageLimits}"
     },
     {
       "type": "ColumnSet",
       "spacing": "Small",
       "verticalContentAlignment": "Center",
+      "$when": "${hasUsageLimits}",
       "columns": [
         {
           "type": "Column",
@@ -55,7 +57,8 @@
       "size": "Small",
       "isSubtle": true,
       "spacing": "Small",
-      "wrap": true
+      "wrap": true,
+      "$when": "${hasUsageLimits}"
     },
     {
       "type": "Image",
@@ -63,7 +66,8 @@
       "size": "Stretch",
       "spacing": "Large",
       "altText": "",
-      "separator": false
+      "separator": false,
+      "$when": "${hasUsageLimits}"
     },
     {
       "type": "TextBlock",
@@ -71,7 +75,8 @@
       "size": "Medium",
       "weight": "Bolder",
       "spacing": "Medium",
-      "wrap": true
+      "wrap": true,
+      "$when": "${hasUsageLimits}"
     },
     {
       "type": "TextBlock",
@@ -80,12 +85,14 @@
       "weight": "Bolder",
       "isSubtle": true,
       "spacing": "Small",
-      "wrap": true
+      "wrap": true,
+      "$when": "${hasUsageLimits}"
     },
     {
       "type": "ColumnSet",
       "spacing": "Small",
       "verticalContentAlignment": "Center",
+      "$when": "${hasUsageLimits}",
       "columns": [
         {
           "type": "Column",
@@ -127,7 +134,27 @@
       "size": "Small",
       "isSubtle": true,
       "spacing": "Small",
-      "wrap": true
+      "wrap": true,
+      "$when": "${hasUsageLimits}"
+    },
+    {
+      "type": "TextBlock",
+      "text": "${planLine}",
+      "size": "Small",
+      "weight": "Bolder",
+      "color": "Default",
+      "isSubtle": false,
+      "wrap": true,
+      "$when": "${hasNoLimitsPlanLine}"
+    },
+    {
+      "type": "TextBlock",
+      "text": "${noUsageLimitsLine}",
+      "size": "Small",
+      "isSubtle": true,
+      "spacing": "Small",
+      "wrap": true,
+      "$when": "${hasNoUsageLimits}"
     },
     {
       "type": "Image",

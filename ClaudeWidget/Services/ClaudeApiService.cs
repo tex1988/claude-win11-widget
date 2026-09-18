@@ -335,14 +335,23 @@ public static class ClaudeApiService
                     return null;
                 }
 
-                double sessionPct = fiveHour.GetProperty("utilization").GetDouble();
+                // A JSON-null five_hour bucket means claude.ai is reporting no
+                // usage limits for this account at all (observed on a free plan,
+                // alongside "limits":[] and a 403 from /subscription_details).
+                // Keyed off the bucket shape rather than the plan name so the
+                // card follows what the API actually reports, not a display
+                // string. ReadUtilization would otherwise silently render this
+                // as a stuck 0%.
+                bool hasUsageLimits = fiveHour.ValueKind == JsonValueKind.Object;
+
+                double sessionPct = ReadUtilization(fiveHour);
                 DateTime? sessionResetsAt = TryGetResetsAt(fiveHour);
 
                 double weeklyPct = 0;
                 DateTime? weeklyResetsAt = null;
                 if (root.TryGetProperty("seven_day", out var sevenDay))
                 {
-                    weeklyPct = sevenDay.GetProperty("utilization").GetDouble();
+                    weeklyPct = ReadUtilization(sevenDay);
                     weeklyResetsAt = TryGetResetsAt(sevenDay);
                 }
 
@@ -382,7 +391,11 @@ public static class ClaudeApiService
                 }
 
                 (DateTime? nextChargeAt, string? billingInterval) = await FetchSubscriptionDetailsAsync(orgId, sessionKey);
-                string? planName = await FetchPlanNameAsync(orgId, sessionKey);
+                // A genuinely free account has no subscription_details at all (403),
+                // which is what tells a real free plan apart from a Tier 3 account
+                // that also reports plan_type "free" — see FetchPlanNameAsync.
+                bool hasSubscriptionData = nextChargeAt.HasValue || billingInterval is not null;
+                string? planName = await FetchPlanNameAsync(orgId, sessionKey, hasSubscriptionData);
                 CreditInfo? creditInfo = await FetchCreditInfoAsync(orgId, sessionKey);
 
                 return new UsageResult(
@@ -390,7 +403,7 @@ public static class ClaudeApiService
                     weeklyPct, weeklyResetsAt,
                     hasFable, fablePct, fableResetsAt,
                     nextChargeAt, billingInterval, planName,
-                    creditInfo);
+                    creditInfo, hasUsageLimits);
             }
         }
         catch (Exception ex)
@@ -444,12 +457,25 @@ public static class ClaudeApiService
     /// <summary>
     /// Fetches the account's plan name ("Free plan" / "Pro plan" / "Max
     /// plan" / "Team plan") from paused_subscription_details' plan_type
-    /// field, applying the same mapping the claude.ai UI itself uses (a
-    /// "free" tier flag still displays as "Pro plan" for accounts with an
-    /// active Tier 3 flag — mirrors the reference JS console snippet).
-    /// Best-effort, same as <see cref="FetchSubscriptionDetailsAsync"/>.
+    /// field. Best-effort, same as <see cref="FetchSubscriptionDetailsAsync"/>.
     /// </summary>
-    private static async Task<string?> FetchPlanNameAsync(string orgId, string sessionKey)
+    /// <param name="hasSubscriptionData">
+    /// Whether <see cref="FetchSubscriptionDetailsAsync"/> actually returned
+    /// billing data — used to disambiguate <c>plan_type == "free"</c>, which is
+    /// reported for BOTH a genuinely free account and a paid account carrying an
+    /// active Tier 3 flag (the claude.ai UI shows the latter as "Pro plan").
+    /// </param>
+    /// <remarks>
+    /// The <c>"free"</c> tier flag alone cannot tell those two cases apart, so
+    /// this previously mapped every <c>"free"</c> to "Pro plan" and mislabelled
+    /// real free accounts. A genuinely free account has no subscription at all:
+    /// its /subscription_details returns HTTP 403 <c>permission_error</c> (and
+    /// /usage returns null buckets with <c>"limits":[]</c>), so no next-charge
+    /// date or billing interval is available — whereas the Tier 3 case has a real
+    /// subscription behind it. Absence of subscription data is therefore the
+    /// discriminator.
+    /// </remarks>
+    private static async Task<string?> FetchPlanNameAsync(string orgId, string sessionKey, bool hasSubscriptionData)
     {
         try
         {
@@ -468,9 +494,14 @@ public static class ClaudeApiService
 
             return rawPlan switch
             {
-                "pro" or "free" => Localization.Get(Str.PlanPro),
+                "pro" => Localization.Get(Str.PlanPro),
                 "max" => Localization.Get(Str.PlanMax),
                 "team" => Localization.Get(Str.PlanTeam),
+                // See <remarks>: "free" is ambiguous — only call it Pro when
+                // there's an actual subscription behind it.
+                "free" => hasSubscriptionData
+                    ? Localization.Get(Str.PlanPro)
+                    : Localization.Get(Str.PlanFree),
                 _ => Localization.Get(Str.PlanFree),
             };
         }
@@ -715,8 +746,37 @@ public static class ClaudeApiService
         return true;
     }
 
+    /// <summary>
+    /// Reads a usage bucket's "utilization" percentage, tolerating a bucket that
+    /// claude.ai returned as JSON <c>null</c> rather than an object.
+    /// </summary>
+    /// <remarks>
+    /// claude.ai's /usage endpoint can return <c>{"five_hour":null,"seven_day":null,...}</c>
+    /// with HTTP 200 and no "error" field (observed on an account with no usage
+    /// recorded for the period). <see cref="JsonElement.TryGetProperty(string, out JsonElement)"/>
+    /// returns <c>true</c> for a present-but-null property, so a presence check alone
+    /// is not enough — calling GetProperty on the Null element throws
+    /// InvalidOperationException ("requires element of type 'Object'"). Treat a null
+    /// bucket as 0% instead of failing the whole fetch.
+    /// </remarks>
+    private static double ReadUtilization(JsonElement bucket)
+    {
+        if (bucket.ValueKind == JsonValueKind.Object &&
+            bucket.TryGetProperty("utilization", out var util) &&
+            util.ValueKind == JsonValueKind.Number)
+        {
+            return util.GetDouble();
+        }
+        return 0;
+    }
+
     private static DateTime? TryGetResetsAt(JsonElement bucket)
     {
+        if (bucket.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
         if (bucket.TryGetProperty("resets_at", out var r) && r.ValueKind != JsonValueKind.Null)
         {
             if (DateTime.TryParse(r.GetString(), null,
@@ -771,7 +831,8 @@ public readonly record struct UsageResult(
     DateTime? NextChargeAt = null,
     string? BillingInterval = null,
     string? PlanName = null,
-    CreditInfo? Credit = null)
+    CreditInfo? Credit = null,
+    bool HasUsageLimits = true)
 {
     /// <summary>"14:30" style time for the session reset.</summary>
     public string SessionResetAtText =>
@@ -871,6 +932,17 @@ public readonly record struct UsageResult(
     /// </summary>
     /// <summary>Just the plan name bold (e.g. "**Тариф Pro**"), empty if unavailable.</summary>
     public string PlanLine => !string.IsNullOrEmpty(PlanName) ? $"**{PlanName}**" : string.Empty;
+
+    /// <summary>
+    /// Explanatory line shown in place of the session/weekly bars on an account
+    /// that has no usage limits to track (see <see cref="HasUsageLimits"/>).
+    /// Rendered on BOTH card sizes, unlike <see cref="PlanLine"/>, because the
+    /// usage section is the small card's only content — hiding it outright would
+    /// leave that card blank. The plan name above it is a separate TextBlock
+    /// bound to <see cref="PlanLine"/> rather than being embedded here, since
+    /// multi-line text inside one Adaptive Card TextBlock is unreliable.
+    /// </summary>
+    public string NoUsageLimitsLine => Localization.Get(Str.NoUsageLimits);
 
     public string PlanAndPaymentLine
     {

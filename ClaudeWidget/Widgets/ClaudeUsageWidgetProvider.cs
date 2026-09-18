@@ -444,10 +444,25 @@ public sealed class ClaudeUsageWidgetProvider : IWidgetProvider
             weeklyBarUri,
             weeklyResetLine = usage.WeeklyResetLine,
 
+            // Accounts with no usage limits to track (free plan) get a short
+            // explanatory note in place of the two bars. Shown on both card
+            // sizes, unlike the isLarge-gated rows below, since the usage
+            // section is the small card's only content.
+            hasUsageLimits = usage.HasUsageLimits,
+            hasNoUsageLimits = !usage.HasUsageLimits,
+            noUsageLimitsLine = usage.NoUsageLimitsLine,
+            // The note block owns the plan name on both card sizes when there
+            // are no limits, so the note never renders above the plan it refers
+            // to. hasPlanLine below is suppressed in that case to avoid showing
+            // the plan name twice on the large card.
+            hasNoLimitsPlanLine = !usage.HasUsageLimits && !string.IsNullOrEmpty(usage.PlanLine),
+
             separatorUri = SeparatorUri,
             isLarge,
             planLine = usage.PlanLine,
-            hasPlanLine = isLarge && !string.IsNullOrEmpty(usage.PlanLine),
+            // Suppressed when there are no usage limits — the note block above
+            // already renders the plan name in that case (see hasNoLimitsPlanLine).
+            hasPlanLine = isLarge && usage.HasUsageLimits && !string.IsNullOrEmpty(usage.PlanLine),
             paymentLine = usage.NextPaymentLine,
             hasPaymentLine = isLarge && !string.IsNullOrEmpty(usage.NextPaymentLine),
             hasPlanAndPaymentLine = isLarge && usage.HasPlanAndPaymentLine,
@@ -506,6 +521,14 @@ public sealed class ClaudeUsageWidgetProvider : IWidgetProvider
 
             sessionPercent = 0, sessionColor = "Attention", sessionBarUri = emptyBarUri, sessionResetLine = message,
             weeklyPercent = 0, weeklyColor = "Attention", weeklyBarUri = emptyBarUri, weeklyResetLine = message,
+
+            // Always true on the error path: the bars are what carry the error
+            // message, and a fetch failure must not be mistaken for a free plan.
+            hasUsageLimits = true,
+            hasNoUsageLimits = false,
+            noUsageLimitsLine = "",
+            hasNoLimitsPlanLine = false,
+
             separatorUri = SeparatorUri,
             isLarge,
             planLine = "",
