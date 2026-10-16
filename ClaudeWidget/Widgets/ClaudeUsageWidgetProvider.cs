@@ -284,7 +284,7 @@ public sealed class ClaudeUsageWidgetProvider : IWidgetProvider
             UsageResult? cached = Cache.TryGetValue(widgetId, out var c) ? c : null;
             string placeholderData = cached.HasValue
                 ? BuildData(cached.Value, isLarge, statusOverride: Localization.Get(Str.Refreshing), dim: true)
-                : BuildErrorData(Localization.Get(Str.Loading), isLarge, timestampOverride: Localization.Get(Str.Refreshing));
+                : BuildErrorData(Localization.Get(Str.Loading), isLarge, timestampOverride: Localization.Get(Str.Refreshing), loading: true);
 
             SendUpdate(widgetId, GetTemplate(), placeholderData);
 
@@ -481,12 +481,13 @@ public sealed class ClaudeUsageWidgetProvider : IWidgetProvider
             // state, and not while a refresh is in flight (dim), since
             // clicking during a refresh could race with the fetch that's
             // about to overwrite the card anyway.
-            hasCreditToggle = isLarge && !dim && usage.HasCredit && usage.CreditToggleKnown,
+            hasCreditToggle = isLarge && !dim && usage.HasCredit && usage.CanToggleCredit,
             // Plain, non-clickable fallback for the same header line when
-            // the toggle isn't available yet (refresh in flight, or the
-            // on/off state hasn't been determined) — without this the
-            // header would simply disappear instead of degrading gracefully.
-            hasCreditNonToggle = isLarge && usage.HasCredit && !(!dim && usage.CreditToggleKnown),
+            // the toggle isn't available (refresh in flight, on/off state
+            // not determined, or a free plan that can't use extra usage) —
+            // without this the header would simply disappear instead of
+            // degrading gracefully.
+            hasCreditNonToggle = isLarge && usage.HasCredit && !(!dim && usage.CanToggleCredit),
             creditToggleEnable = !(usage.ExtraUsageEnabled ?? false),
             hasCreditMonthlyLimitLine = isLarge && usage.HasCreditMonthlyLimitLine,
             creditMonthlyLimitLine = usage.CreditMonthlyLimitLine,
@@ -507,9 +508,15 @@ public sealed class ClaudeUsageWidgetProvider : IWidgetProvider
         });
     }
 
-    private static string BuildErrorData(string message, bool isLarge = true, string? timestampOverride = null)
+    /// <param name="loading">
+    /// When true, renders the bars/percent in neutral dimmed gray instead of
+    /// red "Attention" — used for the first-ever "Loading…" frame (no cache
+    /// yet), which otherwise looks identical to a genuine fetch failure.
+    /// </param>
+    private static string BuildErrorData(string message, bool isLarge = true, string? timestampOverride = null, bool loading = false)
     {
-        string emptyBarUri = ProgressBarImage.BuildDataUri(0, "#EF4444");
+        string emptyBarUri = ProgressBarImage.BuildDataUri(0, loading ? DimHex : "#EF4444");
+        string pctColor = loading ? "Default" : "Attention";
         return JsonSerializer.Serialize(new
         {
             currentSessionLabel = Localization.Get(Str.CurrentSession),
@@ -519,8 +526,8 @@ public sealed class ClaudeUsageWidgetProvider : IWidgetProvider
             usedLabel = Localization.Get(Str.UsedLabel),
             resetLabel = Localization.Get(Str.ResetLabel),
 
-            sessionPercent = 0, sessionColor = "Attention", sessionBarUri = emptyBarUri, sessionResetLine = message,
-            weeklyPercent = 0, weeklyColor = "Attention", weeklyBarUri = emptyBarUri, weeklyResetLine = message,
+            sessionPercent = 0, sessionColor = pctColor, sessionTextSubtle = loading, sessionBarUri = emptyBarUri, sessionResetLine = message,
+            weeklyPercent = 0, weeklyColor = pctColor, weeklyTextSubtle = loading, weeklyBarUri = emptyBarUri, weeklyResetLine = message,
 
             // Always true on the error path: the bars are what carry the error
             // message, and a fetch failure must not be mistaken for a free plan.

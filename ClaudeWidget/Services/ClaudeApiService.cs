@@ -1047,6 +1047,15 @@ public readonly record struct UsageResult(
     /// shouldn't offer a toggle that might send the wrong request).
     /// </summary>
     public bool CreditToggleKnown => Credit.HasValue && ExtraUsageEnabled.HasValue;
+
+    /// <summary>
+    /// Whether the card should offer the clickable usage-credits toggle.
+    /// Free-plan accounts (no usage limits) still get an is_enabled flag
+    /// back from overage_spend_limit, but claude.ai hides the extra-usage
+    /// switch for them and rejects turning it on — so only paid plans get
+    /// the toggle.
+    /// </summary>
+    public bool CanToggleCredit => CreditToggleKnown && HasUsageLimits;
 }
 
 /// <summary>
